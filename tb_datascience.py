@@ -6,48 +6,51 @@ import math
 
 headers = {'User-Agent':"Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/111.0"}
 
-iQtdItens = 254
-iUltimaPagina = math.ceil(int(iQtdItens)/50)
+urlPag = f'https://exame.com/brasil/onde-ha-mais-pessoas-acima-do-peso-no-brasil/'
 
-dicStatus = {'Name':[], 'Name Short':[],'Position':[], 'PPG':[], 'FG':[], '3FG':[], 'FT':[]}
+site = requests.get(urlPag, headers=headers)
+soup = BeautifulSoup(site.content, 'html.parser')
+estados = soup.find_all('strong', class_=re.compile('gallery-title'))
 
-for i in range(1,iUltimaPagina+1):
+estados.pop(28)
+estados.pop(0)
+iCountEstados = len(estados)
+
+
+dicStatus = {'Posicao':[], 'Estado':[],'Total':[]}
+
+for i in range(0, iCountEstados):
+    posicao = i + 1
+    if i == 9:
+        dicStatus['Estado'].append(estados[i].text.split('–')[1].split('-')[0].strip())
+        dicStatus['Total'].append(estados[i].text.split('–')[1].split('-')[1].split('%')[0])
+    else:
+        dicStatus['Estado'].append(estados[i].text.split('-')[1].strip())
+        dicStatus['Total'].append(estados[i].text.split('-')[2].split('%')[0])
     
-    urlPag = f'https://www.cbssports.com/nba/stats/player/scoring/nba/regular/all-pos/qualifiers/?page={i}'
-    site = requests.get(urlPag, headers=headers)
-    soup = BeautifulSoup(site.content, 'html.parser')
-    
-    pages = soup.find_all('tr', class_=re.compile('TableBase-bodyTr'))
-    
-    for page in pages:
+    dicStatus['Posicao'].append(posicao)
 
-        soupJogadoresNameSplit = page.find('span', class_=re.compile('CellPlayerName--long')).get_text().split()
-        soupJogadoresName = soupJogadoresNameSplit[0]+' '+soupJogadoresNameSplit[1]
+urlPag2 = f'https://www.geografiaopinativa.com.br/2016/02/lista-dos-estados-brasileiros-por.html'
 
-        soupJogadoresNameShortSplit = page.find('span', class_=re.compile('CellPlayerName--short')).get_text().split()
-        soupJogadoresNameShort = soupJogadoresNameShortSplit[0]+soupJogadoresNameShortSplit[1]
+site2 = requests.get(urlPag2, headers=headers)
+soup2 = BeautifulSoup(site2.content, 'html.parser')
+dadosHabitantes = soup2.find_all('td', class_=re.compile('xl65'))
+iCountDadosHabitantes = len(dadosHabitantes)
 
-        soupJogadoresPosition = page.find('span', class_=re.compile('CellPlayerName-position')).get_text().split()
+dicHabitantes = {'Estado':[], 'Habitantes':[]}
 
-        soupJogadoresPPGSplit = page.find_all('td', class_=re.compile('TableBase-bodyTd--number'))
-        soupJogadoresPPG = soupJogadoresPPGSplit[3].text.split()
+for i in range(0, iCountDadosHabitantes):
+    if i % 2 == 0:
+        if i == 6 or i == 16:
+            dicHabitantes['Estado'].append(dadosHabitantes[i].text.split()[0])
+        else:
+            dicHabitantes['Estado'].append(dadosHabitantes[i].text.strip())
+    else:
+        dicHabitantes['Habitantes'].append(''.join(dadosHabitantes[i].text.split()))
 
-        soupJogadoresFGSplit = page.find_all('td', class_=re.compile('TableBase-bodyTd--number'))
-        soupJogadoresFG = soupJogadoresFGSplit[6].text.split()
-
-        soupJogadores3FGSplit = page.find_all('td', class_=re.compile('TableBase-bodyTd--number'))
-        soupJogadores3FG = soupJogadores3FGSplit[9].text.split()
-
-        soupJogadoresFTSplit = page.find_all('td', class_=re.compile('TableBase-bodyTd--number'))
-        soupJogadoresFT = soupJogadoresFTSplit[12].text.split()
-        
-        dicStatus['Name'].append(soupJogadoresName)
-        dicStatus['Name Short'].append(soupJogadoresNameShort)
-        dicStatus['Position'].append(soupJogadoresPosition[0])
-        dicStatus['PPG'].append(soupJogadoresPPG[0])
-        dicStatus['FG'].append(soupJogadoresFG[0])
-        dicStatus['3FG'].append(soupJogadores3FG[0])
-        dicStatus['FT'].append(soupJogadoresFT[0])
 
 df = pd.DataFrame(dicStatus)
-df.to_csv('statusNBA.csv', encoding='UTF-8', sep='|')
+df.to_csv('statusObsidade.csv', encoding='UTF-8', sep=';')
+
+df2 = pd.DataFrame(dicHabitantes)
+df2.to_csv('habitantes.csv', encoding='UTF-8', sep=';')
