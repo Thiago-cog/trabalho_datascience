@@ -50,7 +50,7 @@ for i in range(0, iCountDadosHabitantes):
 
 
 df = pd.DataFrame(dicStatus)
-df.to_csv('statusObsidade.csv', encoding='UTF-8', sep=';')
+df.to_csv('statusObesidade.csv', encoding='UTF-8', sep=';')
 
 df2 = pd.DataFrame(dicHabitantes)
 df2.to_csv('habitantes.csv', encoding='UTF-8', sep=';')
